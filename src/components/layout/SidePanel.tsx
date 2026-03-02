@@ -6,17 +6,17 @@ import { cn } from "@/lib/utils";
 import { X, History, ShieldAlert, Trophy, FileText, Calendar, User, Info } from "lucide-react";
 import { useState } from "react";
 import { StatusBadge } from "../ui/custom-badges";
+import { Objective, KeyResult } from "@/types";
 
 export function SidePanel() {
     const { isSidePanelOpen, setSidePanelOpen } = useUIStore();
     const { selectedItem, history, risks, accomplishments, objectives } = useOKRStore();
     const [activeTab, setActiveTab] = useState<'history' | 'risks' | 'accomplishments' | 'details'>('details');
 
-    if (!isSidePanelOpen && !selectedItem) return null;
+    if (!isSidePanelOpen || !selectedItem) return null;
 
-    // Find the selected object
-    let displayItem: any = null;
-    if (selectedItem?.type === 'kr') {
+    let displayItem: (Objective | KeyResult | null) = null;
+    if (selectedItem.type === 'kr') {
         for (const obj of objectives) {
             const kr = obj.key_results?.find(k => k.id === selectedItem.id);
             if (kr) {
@@ -24,8 +24,8 @@ export function SidePanel() {
                 break;
             }
         }
-    } else if (selectedItem?.type === 'objective') {
-        displayItem = objectives.find(o => o.id === selectedItem.id);
+    } else {
+        displayItem = objectives.find(o => o.id === selectedItem.id) || null;
     }
 
     const tabs = [
@@ -34,6 +34,10 @@ export function SidePanel() {
         { id: 'risks', label: 'Risks', icon: ShieldAlert },
         { id: 'accomplishments', label: 'Victories', icon: Trophy },
     ];
+
+    const isKeyResult = (item: Objective | KeyResult): item is KeyResult => {
+        return 'objective' in item;
+    };
 
     return (
         <aside
@@ -64,10 +68,16 @@ export function SidePanel() {
                                 {displayItem.title}
                             </h2>
                             <div className="flex flex-wrap gap-3 items-center">
-                                <StatusBadge>{displayItem.rag_status || displayItem.status}</StatusBadge>
+                                <StatusBadge>
+                                    {isKeyResult(displayItem) ? displayItem.rag_status : displayItem.status}
+                                </StatusBadge>
                                 <div className="flex items-center gap-1.5 text-xs text-text-secondary">
                                     <User size={14} />
-                                    <span>{displayItem.owner_details?.first_name || 'Unassigned'}</span>
+                                    <span>
+                                        {isKeyResult(displayItem)
+                                            ? (displayItem as any).owner_details?.first_name || 'Unassigned'
+                                            : displayItem.owner_details?.first_name || 'Unassigned'}
+                                    </span>
                                 </div>
                                 <div className="flex items-center gap-1.5 text-xs text-text-secondary">
                                     <Calendar size={14} />
@@ -103,7 +113,7 @@ export function SidePanel() {
                                             {displayItem.description || "No description provided."}
                                         </p>
                                     </div>
-                                    {selectedItem?.type === 'kr' && (
+                                    {isKeyResult(displayItem) && (
                                         <div className="grid grid-cols-2 gap-4 border p-4 rounded-lg bg-surface">
                                             <div>
                                                 <span className="block text-[10px] uppercase font-bold text-gray-400">Current Value</span>
@@ -129,20 +139,20 @@ export function SidePanel() {
                                         </div>
                                     ) : (
                                         <div className="relative pl-6 space-y-8 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-100">
-                                            {history.map((entry) => (
+                                            {history.map((entry: any) => (
                                                 <div key={entry.id} className="relative">
                                                     <div className="absolute -left-[22px] top-1 w-3 h-3 rounded-full bg-white border-2 border-primary" />
                                                     <div className="flex justify-between items-start mb-1">
                                                         <span className="text-xs font-bold text-text-primary">
-                                                            Value updated to {entry.new_value}
+                                                            {entry.new_value ? `Value updated to ${entry.new_value}` : 'State changed'}
                                                         </span>
                                                         <span className="text-[10px] text-gray-400">
-                                                            {new Date(entry.recorded_at).toLocaleDateString()}
+                                                            {new Date(entry.recorded_at || entry.performed_at).toLocaleDateString()}
                                                         </span>
                                                     </div>
                                                     <div className="flex items-center gap-2 mb-2">
-                                                        <StatusBadge className="scale-75 origin-left">{entry.new_rag_status}</StatusBadge>
-                                                        <span className="text-[10px] text-text-secondary">by {entry.updated_by_details?.first_name}</span>
+                                                        {entry.new_rag_status && <StatusBadge className="scale-75 origin-left">{entry.new_rag_status}</StatusBadge>}
+                                                        <span className="text-[10px] text-text-secondary">by {entry.updated_by_details?.first_name || entry.performed_by_details?.first_name}</span>
                                                     </div>
                                                     {entry.note && (
                                                         <p className="text-xs text-text-secondary italic bg-gray-50 p-2 rounded">
@@ -164,7 +174,7 @@ export function SidePanel() {
                                             <p className="text-sm">No active risks or blockers identified.</p>
                                         </div>
                                     ) : (
-                                        risks.map(risk => (
+                                        risks.map((risk: any) => (
                                             <div key={risk.id} className="p-3 border rounded-md hover:border-rag-red/30 transition-colors">
                                                 <div className="flex justify-between items-start mb-1">
                                                     <h4 className="text-sm font-bold text-text-primary">{risk.title}</h4>
@@ -189,11 +199,11 @@ export function SidePanel() {
                                             <p className="text-sm">No accomplishments logged yet.</p>
                                         </div>
                                     ) : (
-                                        accomplishments.map(acc => (
+                                        accomplishments.map((acc: any) => (
                                             <div key={acc.id} className="p-3 border-b last:border-0">
                                                 <div className="flex justify-between items-center mb-1">
                                                     <span className="text-xs font-bold text-text-primary">{acc.title}</span>
-                                                    <span className="text-[10px] text-gray-400">{new Date(acc.date).toLocaleDateString()}</span>
+                                                    <span className="text-[10px] text-gray-400">{new Date(acc.date || acc.created_at).toLocaleDateString()}</span>
                                                 </div>
                                                 <p className="text-xs text-text-secondary">{acc.description}</p>
                                             </div>

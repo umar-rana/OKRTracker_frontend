@@ -4,30 +4,7 @@ import { create } from "zustand";
 import api from "@/lib/api";
 import { useAuthStore } from "./auth";
 
-export interface KeyResult {
-    id: string;
-    objective: string;
-    title: string;
-    description: string;
-    kr_type: string;
-    start_value: number;
-    target_value: number;
-    current_value: number;
-    unit: string;
-    priority: string;
-    rag_status: string;
-    due_date: string;
-}
-
-export interface Objective {
-    id: string;
-    title: string;
-    description: string;
-    priority: string;
-    status: string;
-    due_date: string;
-    key_results: KeyResult[];
-}
+import { Objective, KeyResult, Notification, AuditLog } from "@/types";
 
 interface OKRState {
     objectives: Objective[];
@@ -35,12 +12,15 @@ interface OKRState {
     history: any[];
     risks: any[];
     accomplishments: any[];
+    auditLogs: AuditLog[];
     isLoading: boolean;
     error: string | null;
     fetchOKRs: () => Promise<void>;
     updateKR: (krId: string, data: any) => Promise<void>;
+    updateObjective: (objId: string, data: any) => Promise<void>;
     setSelectedItem: (item: { type: 'objective' | 'kr', id: string } | null) => void;
     fetchItemDetails: (type: 'objective' | 'kr', id: string) => Promise<void>;
+    fetchAuditLogs: () => Promise<void>;
 }
 
 export const useOKRStore = create<OKRState>((set, get) => ({
@@ -49,8 +29,20 @@ export const useOKRStore = create<OKRState>((set, get) => ({
     history: [],
     risks: [],
     accomplishments: [],
+    auditLogs: [],
     isLoading: false,
     error: null,
+
+    fetchAuditLogs: async () => {
+        const activeOrgId = useAuthStore.getState().activeOrgId;
+        if (!activeOrgId) return;
+        try {
+            const { data } = await api.get(`/orgs/${activeOrgId}/audit-logs/`);
+            set({ auditLogs: data });
+        } catch (err) {
+            console.error("Failed to fetch audit logs", err);
+        }
+    },
 
     setSelectedItem: (item) => {
         set({ selectedItem: item });
@@ -64,18 +56,17 @@ export const useOKRStore = create<OKRState>((set, get) => ({
         if (!activeOrgId) return;
 
         try {
-            if (type === 'kr') {
-                const [historyRes, risksRes, accRes] = await Promise.all([
-                    api.get(`/orgs/${activeOrgId}/key-results/${id}/history/`),
-                    api.get(`/orgs/${activeOrgId}/risks/?key_result=${id}`),
-                    api.get(`/orgs/${activeOrgId}/accomplishments/?key_result=${id}`)
-                ]);
-                set({
-                    history: historyRes.data,
-                    risks: risksRes.data,
-                    accomplishments: accRes.data
-                });
-            }
+            const baseUrl = `/orgs/${activeOrgId}/${type === 'kr' ? 'key-results' : 'objectives'}/${id}`;
+            const [historyRes, risksRes, accRes] = await Promise.all([
+                api.get(`${baseUrl}/history/`),
+                api.get(`/orgs/${activeOrgId}/risks/?${type === 'kr' ? 'key_result' : 'objective'}=${id}`),
+                api.get(`/orgs/${activeOrgId}/accomplishments/?${type === 'kr' ? 'key_result' : 'objective'}=${id}`)
+            ]);
+            set({
+                history: historyRes.data,
+                risks: risksRes.data,
+                accomplishments: accRes.data
+            });
         } catch (err) {
             console.error("Failed to fetch item details", err);
         }
@@ -106,6 +97,18 @@ export const useOKRStore = create<OKRState>((set, get) => ({
             await get().fetchOKRs(); // Reload to get consistent state
         } catch (err: any) {
             set({ error: err.response?.data?.detail || "Failed to update KR" });
+        }
+    },
+
+    updateObjective: async (objId, data) => {
+        const activeOrgId = useAuthStore.getState().activeOrgId;
+        if (!activeOrgId) return;
+
+        try {
+            await api.patch(`/orgs/${activeOrgId}/objectives/${objId}/`, data);
+            await get().fetchOKRs();
+        } catch (err: any) {
+            set({ error: err.response?.data?.detail || "Failed to update Objective" });
         }
     },
 }));

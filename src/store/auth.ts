@@ -3,23 +3,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-interface User {
-    id: string;
-    email: string;
-    first_name: string;
-    last_name: string;
-    avatar_url: string | null;
-}
+import Cookies from "js-cookie";
 
-interface Membership {
-    organization: {
-        id: string;
-        name: string;
-        slug: string;
-        logo_url: string | null;
-    };
-    role: string;
-}
+import { User, Membership } from "@/types";
 
 interface AuthState {
     user: User | null;
@@ -46,25 +32,34 @@ export const useAuthStore = create<AuthState>()(
             activeOrgId: null,
             accessToken: null,
             refreshToken: null,
-            setAuth: (data) => set({
-                user: data.user,
-                memberships: data.memberships,
-                activeOrgId: data.active_organization_id,
-                accessToken: data.access,
-                refreshToken: data.refresh,
-            }),
-            logout: () => set({
-                user: null,
-                memberships: [],
-                activeOrgId: null,
-                accessToken: null,
-                refreshToken: null,
-            }),
-            switchOrg: (orgId, tokens) => set({
-                activeOrgId: orgId,
-                accessToken: tokens.access,
-                refreshToken: tokens.refresh,
-            }),
+            setAuth: (data) => {
+                Cookies.set('trackr-token', data.access, { expires: 1, secure: true, sameSite: 'strict' });
+                set({
+                    user: data.user,
+                    memberships: data.memberships,
+                    activeOrgId: data.active_organization_id,
+                    accessToken: data.access,
+                    refreshToken: data.refresh,
+                });
+            },
+            logout: () => {
+                Cookies.remove('trackr-token');
+                set({
+                    user: null,
+                    memberships: [],
+                    activeOrgId: null,
+                    accessToken: null,
+                    refreshToken: null,
+                });
+            },
+            switchOrg: (orgId, tokens) => {
+                Cookies.set('trackr-token', tokens.access, { expires: 1, secure: true, sameSite: 'strict' });
+                set({
+                    activeOrgId: orgId,
+                    accessToken: tokens.access,
+                    refreshToken: tokens.refresh,
+                });
+            },
         }),
         {
             name: "trackr-auth",

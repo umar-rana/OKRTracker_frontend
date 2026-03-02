@@ -53,9 +53,9 @@ export function OKRGrid() {
                 </div>
                 <button className="mt-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary-hover transition-colors">
                     Create Objective
+                </button>
             </div>
-      </div >
-    );
+        );
     }
 
     return (

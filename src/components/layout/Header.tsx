@@ -1,7 +1,8 @@
 "use client";
 
-import { Bell, Search, User, Menu } from "lucide-react";
+import { Search, User, Menu } from "lucide-react";
 import { useUIStore } from "@/store/ui";
+import { NotificationCenter } from "./NotificationCenter";
 
 export function Header() {
     const { toggleNav } = useUIStore();
@@ -35,10 +36,7 @@ export function Header() {
             </div>
 
             <div className="flex items-center gap-3">
-                <button className="p-2 text-gray-500 hover:text-primary hover:bg-gray-50 rounded-full transition-colors relative">
-                    <Bell size={18} />
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rag-red rounded-full border-2 border-white"></span>
-                </button>
+                <NotificationCenter />
                 <div className="w-8 h-8 rounded-full bg-gray-100 border flex items-center justify-center text-gray-500 hover:border-primary cursor-pointer transition-colors overflow-hidden">
                     <User size={20} />
                 </div>
