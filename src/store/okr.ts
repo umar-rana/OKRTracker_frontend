@@ -12,6 +12,7 @@ interface OKRState {
     history: any[];
     risks: any[];
     accomplishments: any[];
+    decisions: any[];
     auditLogs: AuditLog[];
     dashboardData: {
         stats: {
@@ -33,6 +34,10 @@ interface OKRState {
     fetchItemDetails: (type: 'objective' | 'kr', id: string) => Promise<void>;
     fetchAuditLogs: () => Promise<void>;
     fetchDashboardData: () => Promise<void>;
+    createObjective: (data: any) => Promise<void>;
+    deleteObjective: (objId: string) => Promise<void>;
+    createKR: (data: any) => Promise<void>;
+    deleteKR: (krId: string) => Promise<void>;
 }
 
 export const useOKRStore = create<OKRState>((set, get) => ({
@@ -41,13 +46,14 @@ export const useOKRStore = create<OKRState>((set, get) => ({
     history: [],
     risks: [],
     accomplishments: [],
+    decisions: [],
     auditLogs: [],
     dashboardData: null,
     isLoading: false,
     error: null,
 
     fetchDashboardData: async () => {
-        const activeOrgId = useAuthStore.getState().activeOrgId;
+        const activeOrgId = useAuthStore.getState().activeOrganizationId;
         if (!activeOrgId) return;
         try {
             const { data } = await api.get(`/orgs/${activeOrgId}/dashboard/`);
@@ -58,7 +64,7 @@ export const useOKRStore = create<OKRState>((set, get) => ({
     },
 
     fetchAuditLogs: async () => {
-        const activeOrgId = useAuthStore.getState().activeOrgId;
+        const activeOrgId = useAuthStore.getState().activeOrganizationId;
         if (!activeOrgId) return;
         try {
             const { data } = await api.get(`/orgs/${activeOrgId}/audit-logs/`);
@@ -76,20 +82,22 @@ export const useOKRStore = create<OKRState>((set, get) => ({
     },
 
     fetchItemDetails: async (type, id) => {
-        const activeOrgId = useAuthStore.getState().activeOrgId;
+        const activeOrgId = useAuthStore.getState().activeOrganizationId;
         if (!activeOrgId) return;
 
         try {
             const baseUrl = `/orgs/${activeOrgId}/${type === 'kr' ? 'key-results' : 'objectives'}/${id}`;
-            const [historyRes, risksRes, accRes] = await Promise.all([
+            const [historyRes, risksRes, accRes, decRes] = await Promise.all([
                 api.get(`${baseUrl}/history/`),
                 api.get(`/orgs/${activeOrgId}/risks/?${type === 'kr' ? 'key_result' : 'objective'}=${id}`),
-                api.get(`/orgs/${activeOrgId}/accomplishments/?${type === 'kr' ? 'key_result' : 'objective'}=${id}`)
+                api.get(`/orgs/${activeOrgId}/accomplishments/?${type === 'kr' ? 'key_result' : 'objective'}=${id}`),
+                api.get(`/orgs/${activeOrgId}/decisions/?${type === 'kr' ? 'key_result' : 'objective'}=${id}`)
             ]);
             set({
                 history: historyRes.data,
                 risks: risksRes.data,
-                accomplishments: accRes.data
+                accomplishments: accRes.data,
+                decisions: decRes.data
             });
         } catch (err) {
             console.error("Failed to fetch item details", err);
@@ -97,7 +105,7 @@ export const useOKRStore = create<OKRState>((set, get) => ({
     },
 
     fetchOKRs: async () => {
-        const activeOrgId = useAuthStore.getState().activeOrgId;
+        const activeOrgId = useAuthStore.getState().activeOrganizationId;
         if (!activeOrgId) return;
 
         set({ isLoading: true, error: null });
@@ -113,7 +121,7 @@ export const useOKRStore = create<OKRState>((set, get) => ({
     },
 
     updateKR: async (krId, data) => {
-        const activeOrgId = useAuthStore.getState().activeOrgId;
+        const activeOrgId = useAuthStore.getState().activeOrganizationId;
         if (!activeOrgId) return;
 
         try {
@@ -125,7 +133,7 @@ export const useOKRStore = create<OKRState>((set, get) => ({
     },
 
     updateObjective: async (objId, data) => {
-        const activeOrgId = useAuthStore.getState().activeOrgId;
+        const activeOrgId = useAuthStore.getState().activeOrganizationId;
         if (!activeOrgId) return;
 
         try {
@@ -133,6 +141,56 @@ export const useOKRStore = create<OKRState>((set, get) => ({
             await get().fetchOKRs();
         } catch (err: any) {
             set({ error: err.response?.data?.detail || "Failed to update Objective" });
+        }
+    },
+
+    createObjective: async (data) => {
+        const activeOrgId = useAuthStore.getState().activeOrganizationId;
+        if (!activeOrgId) return;
+
+        try {
+            await api.post(`/orgs/${activeOrgId}/objectives/`, data);
+            await get().fetchOKRs();
+        } catch (err: any) {
+            set({ error: err.response?.data?.detail || "Failed to create Objective" });
+            throw err;
+        }
+    },
+
+    deleteObjective: async (objId) => {
+        const activeOrgId = useAuthStore.getState().activeOrganizationId;
+        if (!activeOrgId) return;
+
+        try {
+            await api.delete(`/orgs/${activeOrgId}/objectives/${objId}/`);
+            await get().fetchOKRs();
+        } catch (err: any) {
+            set({ error: err.response?.data?.detail || "Failed to delete Objective" });
+        }
+    },
+
+    createKR: async (data) => {
+        const activeOrgId = useAuthStore.getState().activeOrganizationId;
+        if (!activeOrgId) return;
+
+        try {
+            await api.post(`/orgs/${activeOrgId}/key-results/`, data);
+            await get().fetchOKRs();
+        } catch (err: any) {
+            set({ error: err.response?.data?.detail || "Failed to create KR" });
+            throw err;
+        }
+    },
+
+    deleteKR: async (krId) => {
+        const activeOrgId = useAuthStore.getState().activeOrganizationId;
+        if (!activeOrgId) return;
+
+        try {
+            await api.delete(`/orgs/${activeOrgId}/key-results/${krId}/`);
+            await get().fetchOKRs();
+        } catch (err: any) {
+            set({ error: err.response?.data?.detail || "Failed to delete KR" });
         }
     },
 }));

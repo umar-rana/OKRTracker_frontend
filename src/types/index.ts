@@ -22,8 +22,10 @@ export interface Organization {
 }
 
 export interface Membership {
-    organization: Organization;
+    organization: string;
+    organization_name: string;
     role: Role;
+    is_active: boolean;
 }
 
 export interface KeyResult {

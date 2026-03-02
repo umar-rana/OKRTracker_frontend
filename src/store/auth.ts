@@ -10,7 +10,7 @@ import { User, Membership } from "@/types";
 interface AuthState {
     user: User | null;
     memberships: Membership[];
-    activeOrgId: string | null;
+    activeOrganizationId: string | null;
     accessToken: string | null;
     refreshToken: string | null;
     setAuth: (data: {
@@ -21,7 +21,7 @@ interface AuthState {
         refresh: string
     }) => void;
     logout: () => void;
-    switchOrg: (orgId: string, tokens: { access: string, refresh: string }) => void;
+    switchOrganization: (orgId: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -29,7 +29,7 @@ export const useAuthStore = create<AuthState>()(
         (set) => ({
             user: null,
             memberships: [],
-            activeOrgId: null,
+            activeOrganizationId: null,
             accessToken: null,
             refreshToken: null,
             setAuth: (data) => {
@@ -37,7 +37,7 @@ export const useAuthStore = create<AuthState>()(
                 set({
                     user: data.user,
                     memberships: data.memberships,
-                    activeOrgId: data.active_organization_id,
+                    activeOrganizationId: data.active_organization_id,
                     accessToken: data.access,
                     refreshToken: data.refresh,
                 });
@@ -47,18 +47,36 @@ export const useAuthStore = create<AuthState>()(
                 set({
                     user: null,
                     memberships: [],
-                    activeOrgId: null,
+                    activeOrganizationId: null,
                     accessToken: null,
                     refreshToken: null,
                 });
             },
-            switchOrg: (orgId, tokens) => {
-                Cookies.set('trackr-token', tokens.access, { expires: 1, secure: true, sameSite: 'strict' });
-                set({
-                    activeOrgId: orgId,
-                    accessToken: tokens.access,
-                    refreshToken: tokens.refresh,
-                });
+            switchOrganization: async (orgId) => {
+                try {
+                    const { accessToken } = useAuthStore.getState();
+                    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/users/switch-organization/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${accessToken}`
+                        },
+                        body: JSON.stringify({ organization_id: orgId })
+                    });
+
+                    if (!response.ok) throw new Error('Switch failed');
+
+                    const data = await response.json();
+                    Cookies.set('trackr-token', data.access, { expires: 1, secure: true, sameSite: 'strict' });
+                    set({
+                        activeOrganizationId: orgId,
+                        accessToken: data.access,
+                        refreshToken: data.refresh,
+                    });
+                    window.location.reload(); // Refresh to clear all state and re-fetch for new org
+                } catch (error) {
+                    console.error("Failed to switch organization", error);
+                }
             },
         }),
         {

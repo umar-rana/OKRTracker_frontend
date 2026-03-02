@@ -59,15 +59,17 @@ export function OKRGrid() {
     }
 
     return (
-        <div className="flex flex-col h-full bg-white">
-            {/* Grid Header */}
-            <div className="grid grid-cols-[1fr_100px_120px_100px_150px_100px] gap-2 px-4 py-2 bg-gray-50 border-b text-[11px] font-bold text-gray-400 uppercase tracking-wider sticky top-0 z-10">
-                <div className="pl-8">Objective / Key Result</div>
+        <div className="flex flex-col h-full bg-white select-none">
+            {/* Grid Header - High Density 36px */}
+            <div className="grid grid-cols-[1fr_100px_120px_100px_140px_100px_100px_40px] gap-2 px-4 h-9 bg-gray-50 border-b text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] sticky top-0 z-20 items-center">
+                <div className="pl-9">Objective / Key Result</div>
                 <div className="text-center">Status</div>
                 <div className="text-center">Progress</div>
                 <div className="text-center">Priority</div>
-                <div className="text-right">Value / Target</div>
+                <div className="text-center">Value / Target</div>
+                <div className="text-center">Owner</div>
                 <div className="text-right">Due Date</div>
+                <div />
             </div>
 
             <div className="flex-1 overflow-auto">
