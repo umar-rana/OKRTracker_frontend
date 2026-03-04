@@ -35,8 +35,9 @@ export function KeyResultRow({ keyResult }: KeyResultRowProps) {
     return (
         <div
             onClick={handleRowClick}
-            className="grid grid-cols-[1fr_100px_120px_100px_140px_100px_100px_40px] gap-2 px-4 h-9 border-b hover:bg-gray-50/80 cursor-pointer items-center transition-all group relative"
+            className="grid grid-cols-[1fr_150px_130px_100px_120px_100px_140px_100px_100px_40px] gap-2 px-4 h-9 border-b hover:bg-gray-50/80 cursor-pointer items-center transition-all group relative"
         >
+            {/* Key Result Title */}
             <div className="flex items-center gap-3 pl-9 overflow-hidden h-full relative">
                 {/* Visual Connector */}
                 <div className="absolute left-[17px] top-[-50%] h-[150%] w-px bg-gray-100" />
@@ -54,6 +55,37 @@ export function KeyResultRow({ keyResult }: KeyResultRowProps) {
                 </EditableCell>
             </div>
 
+            {/* Key Activity */}
+            <div className="overflow-hidden">
+                <EditableCell
+                    rowId={keyResult.id}
+                    field="key_activity"
+                    initialValue={keyResult.key_activity || ''}
+                    onSave={(val) => handleUpdateField('key_activity', val)}
+                    className="overflow-hidden"
+                >
+                    <span className="truncate text-[11px] text-text-secondary block">
+                        {keyResult.key_activity || <span className="text-gray-300">—</span>}
+                    </span>
+                </EditableCell>
+            </div>
+
+            {/* Metric */}
+            <div className="overflow-hidden">
+                <EditableCell
+                    rowId={keyResult.id}
+                    field="metric"
+                    initialValue={keyResult.metric || ''}
+                    onSave={(val) => handleUpdateField('metric', val)}
+                    className="overflow-hidden"
+                >
+                    <span className="truncate text-[11px] text-text-secondary block">
+                        {keyResult.metric || <span className="text-gray-300">—</span>}
+                    </span>
+                </EditableCell>
+            </div>
+
+            {/* RAG Status */}
             <div className="flex justify-center">
                 <EditableCell
                     rowId={keyResult.id}
@@ -71,6 +103,7 @@ export function KeyResultRow({ keyResult }: KeyResultRowProps) {
                 </EditableCell>
             </div>
 
+            {/* Progress Bar */}
             <div className="flex flex-col gap-1 px-4">
                 <div className="flex justify-between items-center px-0.5">
                     <span className="text-[9px] font-black text-text-secondary">{Math.round(progress)}%</span>
@@ -88,6 +121,7 @@ export function KeyResultRow({ keyResult }: KeyResultRowProps) {
                 </div>
             </div>
 
+            {/* Priority */}
             <div className="flex justify-center">
                 <EditableCell
                     rowId={keyResult.id}
@@ -105,6 +139,7 @@ export function KeyResultRow({ keyResult }: KeyResultRowProps) {
                 </EditableCell>
             </div>
 
+            {/* Current / Target Values */}
             <div className="flex items-center justify-center gap-1 font-mono text-[11px] tabular-nums text-text-secondary font-bold">
                 <EditableCell
                     rowId={keyResult.id}
@@ -129,12 +164,14 @@ export function KeyResultRow({ keyResult }: KeyResultRowProps) {
                 </EditableCell>
             </div>
 
+            {/* Owner Avatar */}
             <div className="flex justify-center">
                 <div className="w-6 h-6 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-[9px] font-black text-gray-500 uppercase">
                     {(keyResult as any).owner_details?.first_name?.[0] || 'U'}
                 </div>
             </div>
 
+            {/* Due Date */}
             <div className="text-right text-[11px] font-bold text-text-secondary">
                 <EditableCell
                     rowId={keyResult.id}
@@ -148,6 +185,7 @@ export function KeyResultRow({ keyResult }: KeyResultRowProps) {
                 </EditableCell>
             </div>
 
+            {/* Actions */}
             <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-all">
                 <div className="p-1 hover:bg-gray-100 rounded text-gray-400">
                     <MoreHorizontal size={14} />

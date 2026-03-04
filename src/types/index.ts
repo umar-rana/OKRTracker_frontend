@@ -38,9 +38,16 @@ export interface KeyResult {
     target_value: number;
     current_value: number;
     unit: string;
+    owner: string;
+    owner_details?: User;
+    co_owner?: string | null;
     priority: Priority;
     rag_status: RAGStatus;
     due_date: string;
+    key_activity?: string;
+    metric?: string;
+    notes?: string;
+    related_files_url?: string;
 }
 
 export interface Objective {
